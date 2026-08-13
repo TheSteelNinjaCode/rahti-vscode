@@ -2,13 +2,14 @@
     "name": "rahti",
     "displayName": "Rahti",
     "description": "Syntax highlighting for Rahti html! templates in Rust files — HTML markup, PulsePoint {js} bindings, @{rust} server interpolation, and embedded <script>/<style> blocks.",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "publisher": "JeffersonAbrahamOmier",
     "license": "MIT",
     "repository": {
         "type": "git",
         "url": "https://github.com/TheSteelNinjaCode/rahti-vscode"
     },
+    "icon": "icon.png",
     "engines": {
         "vscode": "^1.75.0"
     },
