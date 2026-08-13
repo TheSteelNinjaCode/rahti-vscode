@@ -1,0 +1,507 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Rahti html! injection",
+    "scopeName": "rahti-html.injection",
+    "injectionSelector": "L:source.rust -comment -string",
+    "patterns": [
+        {
+            "include": "#html-macro"
+        }
+    ],
+    "repository": {
+        "html-macro": {
+            "begin": "\\b(html!)\\s*(\\{)",
+            "beginCaptures": {
+                "1": {
+                    "name": "entity.name.function.macro.rust"
+                },
+                "2": {
+                    "name": "punctuation.brackets.curly.rust"
+                }
+            },
+            "end": "\\}",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.brackets.curly.rust"
+                }
+            },
+            "contentName": "meta.embedded.block.html.rahti",
+            "patterns": [
+                {
+                    "include": "#html-content"
+                }
+            ]
+        },
+        "html-content": {
+            "patterns": [
+                {
+                    "include": "#comment"
+                },
+                {
+                    "include": "#doctype"
+                },
+                {
+                    "include": "#script-element"
+                },
+                {
+                    "include": "#style-element"
+                },
+                {
+                    "include": "#fragment-tag"
+                },
+                {
+                    "include": "#component-close-tag"
+                },
+                {
+                    "include": "#close-tag"
+                },
+                {
+                    "include": "#component-open-tag"
+                },
+                {
+                    "include": "#open-tag"
+                },
+                {
+                    "include": "#rust-interpolation"
+                },
+                {
+                    "include": "#pp-interpolation"
+                },
+                {
+                    "include": "#text-string"
+                },
+                {
+                    "include": "#entity"
+                }
+            ]
+        },
+        "comment": {
+            "begin": "<!--",
+            "end": "-->",
+            "name": "comment.block.html.rahti"
+        },
+        "doctype": {
+            "match": "(<!)(DOCTYPE|doctype)\\b([^>]*)(>)",
+            "name": "meta.tag.metadata.doctype.html.rahti",
+            "captures": {
+                "1": {
+                    "name": "punctuation.definition.tag.begin.html.rahti"
+                },
+                "2": {
+                    "name": "entity.name.tag.html.rahti"
+                },
+                "3": {
+                    "name": "string.unquoted.html.rahti"
+                },
+                "4": {
+                    "name": "punctuation.definition.tag.end.html.rahti"
+                }
+            }
+        },
+        "script-element": {
+            "begin": "(<)(script)\\b",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.definition.tag.begin.html.rahti"
+                },
+                "2": {
+                    "name": "entity.name.tag.script.html.rahti"
+                }
+            },
+            "end": "(?:(/>)|(</)(script)\\s*(>))",
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.definition.tag.end.html.rahti"
+                },
+                "2": {
+                    "name": "punctuation.definition.tag.begin.html.rahti"
+                },
+                "3": {
+                    "name": "entity.name.tag.script.html.rahti"
+                },
+                "4": {
+                    "name": "punctuation.definition.tag.end.html.rahti"
+                }
+            },
+            "patterns": [
+                {
+                    "begin": "\\G",
+                    "end": "(?=/>)|(>)",
+                    "endCaptures": {
+                        "1": {
+                            "name": "punctuation.definition.tag.end.html.rahti"
+                        }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#attributes"
+                        }
+                    ]
+                },
+                {
+                    "begin": "(?<=>)",
+                    "end": "(?=</script)",
+                    "contentName": "meta.embedded.block.javascript",
+                    "patterns": [
+                        {
+                            "include": "#rust-interpolation"
+                        },
+                        {
+                            "include": "source.js"
+                        }
+                    ]
+                }
+            ]
+        },
+        "style-element": {
+            "begin": "(<)(style)\\b",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.definition.tag.begin.html.rahti"
+                },
+                "2": {
+                    "name": "entity.name.tag.style.html.rahti"
+                }
+            },
+            "end": "(?:(/>)|(</)(style)\\s*(>))",
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.definition.tag.end.html.rahti"
+                },
+                "2": {
+                    "name": "punctuation.definition.tag.begin.html.rahti"
+                },
+                "3": {
+                    "name": "entity.name.tag.style.html.rahti"
+                },
+                "4": {
+                    "name": "punctuation.definition.tag.end.html.rahti"
+                }
+            },
+            "patterns": [
+                {
+                    "begin": "\\G",
+                    "end": "(?=/>)|(>)",
+                    "endCaptures": {
+                        "1": {
+                            "name": "punctuation.definition.tag.end.html.rahti"
+                        }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#attributes"
+                        }
+                    ]
+                },
+                {
+                    "begin": "(?<=>)",
+                    "end": "(?=</style)",
+                    "contentName": "meta.embedded.block.css",
+                    "patterns": [
+                        {
+                            "include": "source.css"
+                        }
+                    ]
+                }
+            ]
+        },
+        "fragment-tag": {
+            "match": "(</?)(>)",
+            "name": "meta.tag.fragment.rahti",
+            "captures": {
+                "1": {
+                    "name": "punctuation.definition.tag.begin.html.rahti"
+                },
+                "2": {
+                    "name": "punctuation.definition.tag.end.html.rahti"
+                }
+            }
+        },
+        "component-open-tag": {
+            "begin": "(<)([A-Z][a-zA-Z0-9_]*)",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.definition.tag.begin.html.rahti"
+                },
+                "2": {
+                    "name": "support.class.component.rahti"
+                }
+            },
+            "end": "(/?>)",
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.definition.tag.end.html.rahti"
+                }
+            },
+            "name": "meta.tag.component.rahti",
+            "patterns": [
+                {
+                    "include": "#attributes"
+                }
+            ]
+        },
+        "component-close-tag": {
+            "match": "(</)([A-Z][a-zA-Z0-9_]*)\\s*(>)",
+            "name": "meta.tag.component.rahti",
+            "captures": {
+                "1": {
+                    "name": "punctuation.definition.tag.begin.html.rahti"
+                },
+                "2": {
+                    "name": "support.class.component.rahti"
+                },
+                "3": {
+                    "name": "punctuation.definition.tag.end.html.rahti"
+                }
+            }
+        },
+        "open-tag": {
+            "begin": "(<)([a-z][a-zA-Z0-9:.-]*)",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.definition.tag.begin.html.rahti"
+                },
+                "2": {
+                    "name": "entity.name.tag.html.rahti"
+                }
+            },
+            "end": "(/?>)",
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.definition.tag.end.html.rahti"
+                }
+            },
+            "name": "meta.tag.html.rahti",
+            "patterns": [
+                {
+                    "include": "#attributes"
+                }
+            ]
+        },
+        "close-tag": {
+            "match": "(</)([a-z][a-zA-Z0-9:.-]*)\\s*(>)",
+            "name": "meta.tag.html.rahti",
+            "captures": {
+                "1": {
+                    "name": "punctuation.definition.tag.begin.html.rahti"
+                },
+                "2": {
+                    "name": "entity.name.tag.html.rahti"
+                },
+                "3": {
+                    "name": "punctuation.definition.tag.end.html.rahti"
+                }
+            }
+        },
+        "attributes": {
+            "patterns": [
+                {
+                    "include": "#rust-interpolation"
+                },
+                {
+                    "include": "#pp-interpolation"
+                },
+                {
+                    "include": "#pp-for-attribute"
+                },
+                {
+                    "match": "\\b(pp-for|pp-ref|pp-style|pp-spread|pp-spa|pp-reset-scroll|pp-scroll-key|pp-loading-content|pp-loading-transition)\\b",
+                    "name": "entity.other.attribute-name.pulsepoint.rahti"
+                },
+                {
+                    "match": "\\b(?:data-pp|pp)-[a-zA-Z][a-zA-Z0-9-]*\\b",
+                    "name": "invalid.illegal.attribute-name.pulsepoint.rahti"
+                },
+                {
+                    "include": "#attribute-string"
+                },
+                {
+                    "match": "\\b(on[a-z]+)(?=\\s*=)",
+                    "name": "entity.other.attribute-name.event.rahti"
+                },
+                {
+                    "match": "[a-zA-Z_][a-zA-Z0-9_:.-]*",
+                    "name": "entity.other.attribute-name.html.rahti"
+                },
+                {
+                    "match": "=",
+                    "name": "punctuation.separator.key-value.html.rahti"
+                },
+                {
+                    "match": "\\b[0-9]+(\\.[0-9]+)?\\b",
+                    "name": "constant.numeric.rahti"
+                }
+            ]
+        },
+        "pp-for-attribute": {
+            "begin": "\\b(pp-for)\\s*(=)\\s*(\")",
+            "beginCaptures": {
+                "1": {
+                    "name": "entity.other.attribute-name.pulsepoint.rahti"
+                },
+                "2": {
+                    "name": "punctuation.separator.key-value.html.rahti"
+                },
+                "3": {
+                    "name": "punctuation.definition.string.begin.rahti"
+                }
+            },
+            "end": "\"",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.end.rahti"
+                }
+            },
+            "name": "meta.attribute.pp-for.rahti",
+            "patterns": [
+                {
+                    "match": "\\bin\\b",
+                    "name": "keyword.operator.in.pulsepoint.rahti"
+                },
+                {
+                    "match": "[A-Za-z_$][A-Za-z0-9_$]*",
+                    "name": "variable.other.pulsepoint.rahti"
+                },
+                {
+                    "match": "[(),]",
+                    "name": "punctuation.separator.pulsepoint.rahti"
+                }
+            ]
+        },
+        "attribute-string": {
+            "patterns": [
+                {
+                    "begin": "\"",
+                    "end": "\"",
+                    "name": "string.quoted.double.html.rahti",
+                    "patterns": [
+                        {
+                            "match": "\\\\.",
+                            "name": "constant.character.escape.rahti"
+                        },
+                        {
+                            "include": "#pp-interpolation"
+                        },
+                        {
+                            "include": "#entity"
+                        }
+                    ]
+                },
+                {
+                    "begin": "'",
+                    "end": "'",
+                    "name": "string.quoted.single.html.rahti",
+                    "patterns": [
+                        {
+                            "match": "\\\\.",
+                            "name": "constant.character.escape.rahti"
+                        },
+                        {
+                            "include": "#pp-interpolation"
+                        },
+                        {
+                            "include": "#entity"
+                        }
+                    ]
+                }
+            ]
+        },
+        "text-string": {
+            "begin": "\"",
+            "end": "\"",
+            "name": "string.quoted.double.rahti",
+            "patterns": [
+                {
+                    "match": "\\\\.",
+                    "name": "constant.character.escape.rahti"
+                },
+                {
+                    "include": "#pp-interpolation"
+                },
+                {
+                    "include": "#entity"
+                }
+            ]
+        },
+        "entity": {
+            "match": "(&)(#?[a-zA-Z0-9]+)(;)",
+            "name": "constant.character.entity.html.rahti"
+        },
+        "rust-interpolation": {
+            "begin": "(@\\{)",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.section.embedded.begin.rust.rahti"
+                }
+            },
+            "end": "(\\})",
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.section.embedded.end.rust.rahti"
+                }
+            },
+            "contentName": "meta.embedded.block.rust",
+            "patterns": [
+                {
+                    "include": "#html-macro"
+                },
+                {
+                    "include": "#rust-code-brace"
+                },
+                {
+                    "include": "source.rust"
+                }
+            ]
+        },
+        "rust-code-brace": {
+            "begin": "\\{",
+            "end": "\\}",
+            "patterns": [
+                {
+                    "include": "#html-macro"
+                },
+                {
+                    "include": "#rust-code-brace"
+                },
+                {
+                    "include": "source.rust"
+                }
+            ]
+        },
+        "pp-interpolation": {
+            "begin": "(?<!@)(\\{)",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.section.embedded.begin.pulsepoint.rahti"
+                }
+            },
+            "end": "(\\})",
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.section.embedded.end.pulsepoint.rahti"
+                }
+            },
+            "contentName": "meta.embedded.block.javascript",
+            "patterns": [
+                {
+                    "include": "#js-code-brace"
+                },
+                {
+                    "include": "source.js"
+                }
+            ]
+        },
+        "js-code-brace": {
+            "begin": "\\{",
+            "end": "\\}",
+            "patterns": [
+                {
+                    "include": "#js-code-brace"
+                },
+                {
+                    "include": "source.js"
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,14 @@
+# Packaged extension artifacts
+*.vsix
+
+# Dependencies (vsce and any future tooling)
+node_modules/
+package-lock.json
+
+# Extension test runner output
+.vscode-test/
+
+# Editor and OS noise
+*.log
+Thumbs.db
+.DS_Store

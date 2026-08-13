@@ -1,0 +1,43 @@
+{
+    "name": "rahti",
+    "displayName": "Rahti",
+    "description": "Syntax highlighting for Rahti html! templates in Rust files — HTML markup, PulsePoint {js} bindings, @{rust} server interpolation, and embedded <script>/<style> blocks.",
+    "version": "0.0.1",
+    "publisher": "rahti",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/TheSteelNinjaCode/rahti-vscode"
+    },
+    "engines": {
+        "vscode": "^1.75.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "keywords": [
+        "rust",
+        "rahti",
+        "html",
+        "pulsepoint",
+        "template",
+        "highlighting"
+    ],
+    "contributes": {
+        "grammars": [
+            {
+                "scopeName": "rahti-html.injection",
+                "path": "./syntaxes/rahti.injection.tmLanguage.json",
+                "injectTo": [
+                    "source.rust"
+                ],
+                "embeddedLanguages": {
+                    "meta.embedded.block.html.rahti": "html",
+                    "meta.embedded.block.rust": "rust",
+                    "meta.embedded.block.javascript": "javascript",
+                    "meta.embedded.block.css": "css"
+                }
+            }
+        ]
+    }
+}
