@@ -2,7 +2,7 @@
     "name": "rahti",
     "displayName": "Rahti",
     "description": "Syntax highlighting for Rahti html! templates in Rust files — HTML markup, PulsePoint {js} bindings, @{rust} server interpolation, and embedded <script>/<style> blocks.",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "publisher": "JeffersonAbrahamOmier",
     "license": "MIT",
     "repository": {

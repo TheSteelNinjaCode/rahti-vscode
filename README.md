@@ -24,7 +24,8 @@ each get their own color.
 | `<token.provider value="{value}">` | Context-provider tags |
 | `onclick={…}`, `oninput={…}` | Event attributes |
 | `"Quoted authored text"` | Strings, with escapes and `&#123;` entity references |
-| `<!DOCTYPE html>`, `<!-- … -->` | Doctype and comments |
+| `<!DOCTYPE html>`, `<!-- … -->` | Doctype and authored HTML comments |
+| `// line`, `/* block */` | Rust comments — anywhere inside the macro, between nodes or between attributes. Their text is never read as markup |
 
 Nested `html! { … }` blocks inside `@{…}` expressions re-enter HTML
 highlighting, so patterns like `Html::concat(items.iter().map(|item| html! { <li>@{item}</li> }))`
@@ -35,7 +36,7 @@ work too.
 ### From a packaged .vsix
 
 ```bash
-code --install-extension rahti-0.0.1.vsix
+code --install-extension rahti-0.0.3.vsix
 ```
 
 (Or in VS Code: Extensions panel → `…` menu → *Install from VSIX…*)

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.0.3 — 2026-08-13
+
+Rust comments inside `html!`.
+
+- `// line` and `/* block */` comments — including nested block comments — are
+  now recognized inside the macro, both between nodes and between a tag's
+  attributes. `html!` is a proc macro, so the Rust lexer strips these before
+  the macro ever sees them; they are legal anywhere inside the template.
+- Fixes highlighting collapsing from a comment onward. The grammar previously
+  read comment text as markup, so a comment mentioning `` `<script>` `` opened
+  a JavaScript region that ran to the next real `</script>` — swallowing the
+  tags, text, and script in between. Prose mentioning `<head>`, a stray `"`,
+  or a `{brace}` misfired the same way.
+
 ## 0.0.2 — 2026-08-12
 
 Aligned with the real PulsePoint convention (`docs/conventions/pulsepoint.md`).

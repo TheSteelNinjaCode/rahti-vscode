@@ -35,6 +35,9 @@
         "html-content": {
             "patterns": [
                 {
+                    "include": "#rust-comment"
+                },
+                {
                     "include": "#comment"
                 },
                 {
@@ -79,6 +82,30 @@
             "begin": "<!--",
             "end": "-->",
             "name": "comment.block.html.rahti"
+        },
+        "rust-comment": {
+            "patterns": [
+                {
+                    "include": "#rust-line-comment"
+                },
+                {
+                    "include": "#rust-block-comment"
+                }
+            ]
+        },
+        "rust-line-comment": {
+            "match": "//.*$",
+            "name": "comment.line.double-slash.rust"
+        },
+        "rust-block-comment": {
+            "begin": "/\\*",
+            "end": "\\*/",
+            "name": "comment.block.rust",
+            "patterns": [
+                {
+                    "include": "#rust-block-comment"
+                }
+            ]
         },
         "doctype": {
             "match": "(<!)(DOCTYPE|doctype)\\b([^>]*)(>)",
@@ -295,6 +322,9 @@
         },
         "attributes": {
             "patterns": [
+                {
+                    "include": "#rust-comment"
+                },
                 {
                     "include": "#rust-interpolation"
                 },

@@ -11,6 +11,11 @@ pub fn layout(children: Html) -> Html {
             <head>
                 <meta charset="UTF-8" />
                 <title>"my-app"</title>
+                // A Rust line comment inside the macro. The lexer strips it
+                // before the macro runs, so anything may appear here —
+                // including markup that must NOT open a region: `<script>`,
+                // `<style>`, `<head>`, a lone `"` quote, or a `{brace}`.
+                /* A block comment, with a nested /* block comment */ inside. */
                 <link href="/css/styles.css" rel="stylesheet" />
                 <script type="module" src="/js/main.js"></script>
                 <style>
@@ -38,7 +43,10 @@ pub async fn page() -> Html {
 
             <button onclick={setCount(count + 1)}>{count}</button>
             <input value={name} oninput={setName(target.value)} />
-            <input type="file" pp-ref={file} />
+            <input
+                type="file"
+                pp-ref={file} // a comment between attributes
+            />
             <a href="/about" pp-spa="false">"About"</a>
 
             <ul>
