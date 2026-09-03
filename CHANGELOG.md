@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- JSX-style Ctrl+. component import quick fixes inside `html!` markup.
+- Component tag completion with automatic Rust `use` edits.
+- Full-path choices for same-named components in different directories;
+  completion adds a collision-free alias when needed and keeps paired tags aligned.
+- Cargo-crate-scoped indexing, nested component directories, multiple components
+  per file, and refreshes for unsaved edits and filesystem changes.
+- Scope-aware handling of existing explicit, grouped, aliased, and direct
+  component-module glob imports, with preservation of module docs and attributes.
+- Dependency-free unit and VS Code provider contract tests.
+
 ## 0.0.3 — 2026-08-13
 
 Rust comments inside `html!`.
