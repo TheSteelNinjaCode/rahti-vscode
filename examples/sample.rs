@@ -94,3 +94,22 @@ pub fn Pair(label: &str, items: Vec<String>) -> Html {
 pub async fn hello(who: String) -> String {
     format!("Hello, {who}.")
 }
+
+/// Script as one Rust raw string: JavaScript the Rust lexer rejects (single
+/// quotes, template literals, comments) highlights as JavaScript, and the body
+/// closes at the same `"#` rustc closes it at. `@{…}` is Rust at any depth.
+#[component]
+pub fn Greeter(name: String) -> Html {
+    html! {
+        <section class="greeter">
+            <p>{greeting}</p>
+            <script>r#"
+                // Comments survive in a raw-string body.
+                const name = @{Json(&name)};
+                const [greeting, setGreeting] = pp.state(`Hello, ${name}!`);
+                const color = '#4f46e5';
+                const literal = "@@{not rust}";
+            "#</script>
+        </section>
+    }
+}

@@ -171,12 +171,47 @@
                     "contentName": "meta.embedded.block.javascript",
                     "patterns": [
                         {
+                            "include": "#raw-script-body"
+                        },
+                        {
                             "include": "#rust-interpolation"
                         },
                         {
                             "include": "source.js"
                         }
                     ]
+                }
+            ]
+        },
+        "raw-script-body": {
+            "comment": "A script body written as one Rust raw string, <script>r#\"…\"#</script>: the delimiters are Rust, the contents JavaScript. The end back-references the opening hashes, so it closes exactly where rustc closes the raw string.",
+            "begin": "(?:\\G|^)\\s*(r)(#*)(\")",
+            "beginCaptures": {
+                "1": {
+                    "name": "storage.type.string.raw.rust punctuation.definition.raw-script.begin.rahti"
+                },
+                "2": {
+                    "name": "punctuation.definition.raw-script.begin.rahti"
+                },
+                "3": {
+                    "name": "punctuation.definition.raw-script.begin.rahti"
+                }
+            },
+            "end": "(\")(\\2)",
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.definition.raw-script.end.rahti"
+                },
+                "2": {
+                    "name": "punctuation.definition.raw-script.end.rahti"
+                }
+            },
+            "patterns": [
+                {
+                    "include": "#rust-interpolation"
+                },
+                {
+                    "include": "source.js"
                 }
             ]
         },

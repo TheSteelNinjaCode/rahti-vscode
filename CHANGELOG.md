@@ -11,6 +11,17 @@
 - Scope-aware handling of existing explicit, grouped, aliased, and direct
   component-module glob imports, with preservation of module docs and attributes.
 - Dependency-free unit and VS Code provider contract tests.
+- `<script>r#"…"#</script>` bodies highlight as JavaScript. The JavaScript grammar
+  read `r#"` as the start of a JS string, so the script and everything after it
+  in the file — closing tags, later Rust functions — took the wrong colors. The
+  raw-string delimiters now have their own scope, and the body closes at the
+  same `"#` (or `"##`, …) where rustc closes it.
+- `@{…}` Rust islands are found at any depth of a script body, such as
+  `pp.state(@{Json(&items)})` or `const x = @{…}`, not only at statement level.
+- Defaults `rust-analyzer.semanticHighlighting.strings.enable` to `false`, so
+  rust-analyzer's string coloring does not paint over a raw-string script.
+- Grammar tests that tokenize with the grammars and tokenizer of the installed
+  VS Code, still with no npm dependencies.
 
 ## 0.0.3 — 2026-08-13
 

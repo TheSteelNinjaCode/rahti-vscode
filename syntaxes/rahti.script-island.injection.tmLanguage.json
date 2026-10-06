@@ -1,0 +1,32 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Rahti @{…} islands in embedded JavaScript",
+    "scopeName": "rahti-script-island.injection",
+    "comment": "html! lifts @{rust_expression} out of a <script> body wherever it sits, so the island is found at any depth of the JavaScript grammar — inside `const x = @{…}`, a call, or a string — not only where the script body's own patterns are consulted. @@{ is a literal @{ and stays JavaScript.",
+    "injectionSelector": "L:meta.embedded.block.javascript",
+    "patterns": [
+        {
+            "begin": "(?<!@)(@\\{)",
+            "beginCaptures": {
+                "1": {
+                    "name": "punctuation.section.embedded.begin.rust.rahti"
+                }
+            },
+            "end": "(\\})",
+            "endCaptures": {
+                "1": {
+                    "name": "punctuation.section.embedded.end.rust.rahti"
+                }
+            },
+            "contentName": "meta.embedded.block.rust",
+            "patterns": [
+                {
+                    "include": "rahti-html.injection#rust-code-brace"
+                },
+                {
+                    "include": "source.rust"
+                }
+            ]
+        }
+    ]
+}

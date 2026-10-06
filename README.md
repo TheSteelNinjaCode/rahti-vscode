@@ -17,7 +17,7 @@ each get their own color.
 | `<>…</>` | Fragment roots |
 | `@{rust_expression}` | Embedded Rust (server render) |
 | `{javascript_expression}` | Embedded JavaScript (PulsePoint, browser render) — in text, unquoted attributes, and quoted attributes like `key="{item.id}"` |
-| `<script>…</script>` | JavaScript body, with `@{…}` Rust islands inside |
+| `<script>r#"…"#</script>` / `<script>…</script>` | JavaScript body — written as a Rust raw string or as tokens — with `@{…}` Rust islands anywhere inside it; `@@{` stays a literal `@{` |
 | `<style>…</style>` | CSS body |
 | `pp-for`, `pp-ref`, `pp-style`, `pp-spread`, `pp-spa`, … | The authored PulsePoint attribute surface (distinct scope) |
 | `pp-for="(item, index) in items"` | Loop DSL: variables and the `in` keyword |
@@ -103,6 +103,12 @@ in this folder exercises every syntax form.
 To inspect what scope a token received: `Ctrl+Shift+P` →
 *Developer: Inspect Editor Tokens and Scopes*.
 
+The grammar tests tokenize real Rahti markup with the same grammars and
+tokenizer VS Code uses, read from your installed VS Code — no npm packages.
+They find a standard installation on their own; `VSCODE_APP` names an
+editor's `resources/app` directory otherwise. Without one they skip and say
+so; `RAHTI_GRAMMAR_REQUIRED=1` makes that a failure.
+
 Run the dependency-free lexer, import, index, and VS Code provider contract tests
 with Node.js 18 or newer:
 
@@ -119,12 +125,24 @@ insert an aliased import. Undo restores the original document in one step.
 
 ## How it works
 
-The extension contributes no language of its own. It contributes one
-**injection grammar** (`syntaxes/rahti.injection.tmLanguage.json`) targeting
-`source.rust`. When the tokenizer meets `html! {`, the grammar takes over
-until the macro's closing brace, delegating to the stock `source.rust`,
-`source.js`, and `source.css` grammars for the embedded regions — so embedded
-code is colored by the same grammars as standalone files, in any theme.
+The extension contributes no language of its own. It contributes two
+**injection grammars** targeting `source.rust`.
+`syntaxes/rahti.injection.tmLanguage.json` takes over when the tokenizer meets
+`html! {`, until the macro's closing brace, delegating to the stock
+`source.rust`, `source.js`, and `source.css` grammars for the embedded regions
+— so embedded code is colored by the same grammars as standalone files, in
+any theme. A script body written as a Rust raw string, `<script>r#"…"#</script>`,
+is JavaScript between Rust delimiters, closed exactly where rustc closes the raw
+string. `syntaxes/rahti.script-island.injection.tmLanguage.json` finds
+`@{rust_expression}` at any depth of embedded JavaScript (`pp.state(@{…})`,
+`const x = @{…}`), where `html!` lifts it too.
+
+rust-analyzer's semantic highlighting paints a whole string literal one color,
+and VS Code lets semantic tokens override grammars, which would flatten a
+raw-string script to string color. The extension therefore defaults
+`rust-analyzer.semanticHighlighting.strings.enable` to `false`, the setting
+rust-analyzer provides for exactly this; Rust strings are still colored by the
+grammar. Set it back to `true` in your settings to override.
 
 `src/extension.js` registers Rust quick-fix and completion providers using the
 [VS Code extension API](https://code.visualstudio.com/api/references/vscode-api).

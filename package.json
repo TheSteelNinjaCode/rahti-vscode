@@ -2,7 +2,7 @@
     "name": "rahti",
     "displayName": "Rahti",
     "description": "Rahti html! syntax highlighting and JSX-style component auto-imports in Rust files.",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "publisher": "JeffersonAbrahamOmier",
     "license": "MIT",
     "main": "./src/extension.js",
@@ -33,6 +33,9 @@
         "highlighting"
     ],
     "contributes": {
+        "configurationDefaults": {
+            "rust-analyzer.semanticHighlighting.strings.enable": false
+        },
         "grammars": [
             {
                 "scopeName": "rahti-html.injection",
@@ -45,6 +48,16 @@
                     "meta.embedded.block.rust": "rust",
                     "meta.embedded.block.javascript": "javascript",
                     "meta.embedded.block.css": "css"
+                }
+            },
+            {
+                "scopeName": "rahti-script-island.injection",
+                "path": "./syntaxes/rahti.script-island.injection.tmLanguage.json",
+                "injectTo": [
+                    "source.rust"
+                ],
+                "embeddedLanguages": {
+                    "meta.embedded.block.rust": "rust"
                 }
             }
         ]
