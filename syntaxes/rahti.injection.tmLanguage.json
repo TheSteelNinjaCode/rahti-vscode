@@ -10,18 +10,34 @@
     ],
     "repository": {
         "html-macro": {
-            "begin": "\\b(html!)\\s*(\\{)",
+            "comment": "html! {r##\"…\"##}: a template is one raw string of HTML. It closes at the quote and hashes it opened with, then the macro's brace, exactly where rustc closes the raw string.",
+            "begin": "\\b(html!)\\s*(\\{)\\s*(r)(#*)(\")",
             "beginCaptures": {
                 "1": {
                     "name": "entity.name.function.macro.rust"
                 },
                 "2": {
                     "name": "punctuation.brackets.curly.rust"
+                },
+                "3": {
+                    "name": "storage.type.string.raw.rust punctuation.definition.template.begin.rahti"
+                },
+                "4": {
+                    "name": "punctuation.definition.template.begin.rahti"
+                },
+                "5": {
+                    "name": "punctuation.definition.template.begin.rahti"
                 }
             },
-            "end": "\\}",
+            "end": "(\")(\\4)\\s*(\\})",
             "endCaptures": {
-                "0": {
+                "1": {
+                    "name": "punctuation.definition.template.end.rahti"
+                },
+                "2": {
+                    "name": "punctuation.definition.template.end.rahti"
+                },
+                "3": {
                     "name": "punctuation.brackets.curly.rust"
                 }
             },
@@ -34,9 +50,6 @@
         },
         "html-content": {
             "patterns": [
-                {
-                    "include": "#rust-comment"
-                },
                 {
                     "include": "#comment"
                 },
@@ -71,9 +84,6 @@
                     "include": "#pp-interpolation"
                 },
                 {
-                    "include": "#text-string"
-                },
-                {
                     "include": "#entity"
                 }
             ]
@@ -82,30 +92,6 @@
             "begin": "<!--",
             "end": "-->",
             "name": "comment.block.html.rahti"
-        },
-        "rust-comment": {
-            "patterns": [
-                {
-                    "include": "#rust-line-comment"
-                },
-                {
-                    "include": "#rust-block-comment"
-                }
-            ]
-        },
-        "rust-line-comment": {
-            "match": "//.*$",
-            "name": "comment.line.double-slash.rust"
-        },
-        "rust-block-comment": {
-            "begin": "/\\*",
-            "end": "\\*/",
-            "name": "comment.block.rust",
-            "patterns": [
-                {
-                    "include": "#rust-block-comment"
-                }
-            ]
         },
         "doctype": {
             "match": "(<!)(DOCTYPE|doctype)\\b([^>]*)(>)",
@@ -171,47 +157,12 @@
                     "contentName": "meta.embedded.block.javascript",
                     "patterns": [
                         {
-                            "include": "#raw-script-body"
-                        },
-                        {
                             "include": "#rust-interpolation"
                         },
                         {
                             "include": "source.js"
                         }
                     ]
-                }
-            ]
-        },
-        "raw-script-body": {
-            "comment": "A script body written as one Rust raw string, <script>r#\"…\"#</script>: the delimiters are Rust, the contents JavaScript. The end back-references the opening hashes, so it closes exactly where rustc closes the raw string.",
-            "begin": "(?:\\G|^)\\s*(r)(#*)(\")",
-            "beginCaptures": {
-                "1": {
-                    "name": "storage.type.string.raw.rust punctuation.definition.raw-script.begin.rahti"
-                },
-                "2": {
-                    "name": "punctuation.definition.raw-script.begin.rahti"
-                },
-                "3": {
-                    "name": "punctuation.definition.raw-script.begin.rahti"
-                }
-            },
-            "end": "(\")(\\2)",
-            "endCaptures": {
-                "1": {
-                    "name": "punctuation.definition.raw-script.end.rahti"
-                },
-                "2": {
-                    "name": "punctuation.definition.raw-script.end.rahti"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#rust-interpolation"
-                },
-                {
-                    "include": "source.js"
                 }
             ]
         },
@@ -358,9 +309,6 @@
         "attributes": {
             "patterns": [
                 {
-                    "include": "#rust-comment"
-                },
-                {
                     "include": "#rust-interpolation"
                 },
                 {
@@ -468,23 +416,6 @@
                             "include": "#entity"
                         }
                     ]
-                }
-            ]
-        },
-        "text-string": {
-            "begin": "\"",
-            "end": "\"",
-            "name": "string.quoted.double.rahti",
-            "patterns": [
-                {
-                    "match": "\\\\.",
-                    "name": "constant.character.escape.rahti"
-                },
-                {
-                    "include": "#pp-interpolation"
-                },
-                {
-                    "include": "#entity"
                 }
             ]
         },

@@ -3,10 +3,11 @@
 Syntax highlighting and JSX-style component imports for Rahti `html!` templates
 inside Rust files.
 
-Without this extension, everything inside `html! { … }` renders as plain Rust
-tokens — tags, attributes, and PulsePoint bindings all look the same. This
-extension injects a TextMate grammar into Rust files so the template dialects
-each get their own color.
+A Rahti template is one raw string of HTML, `html! {r##"…"##}`. Without this
+extension it renders as one Rust string — tags, attributes, PulsePoint
+bindings and script bodies all one color. This extension injects a TextMate
+grammar into Rust files so the template's HTML and its dialects each get their
+own color.
 
 ## What gets highlighted
 
@@ -16,21 +17,21 @@ each get their own color.
 | `<Card title="…">` / `<slot />` | Component tags (PascalCase, distinct color) |
 | `<>…</>` | Fragment roots |
 | `@{rust_expression}` | Embedded Rust (server render) |
-| `{javascript_expression}` | Embedded JavaScript (PulsePoint, browser render) — in text, unquoted attributes, and quoted attributes like `key="{item.id}"` |
-| `<script>r#"…"#</script>` / `<script>…</script>` | JavaScript body — written as a Rust raw string or as tokens — with `@{…}` Rust islands anywhere inside it; `@@{` stays a literal `@{` |
+| `html! {r##"…"##}` | The template: its delimiters, and HTML until the `"##}` that closes it — exactly where rustc closes the raw string |
+| `{javascript_expression}` | Embedded JavaScript (PulsePoint, browser render) — in text and as a quoted attribute value like `key="{item.id}"` |
+| `<script>…</script>` | Plain JavaScript body, with `@{…}` Rust islands anywhere inside it; `@@{` stays a literal `@{` |
 | `<style>…</style>` | CSS body |
 | `pp-for`, `pp-ref`, `pp-style`, `pp-spread`, `pp-spa`, … | The authored PulsePoint attribute surface (distinct scope) |
 | `pp-for="(item, index) in items"` | Loop DSL: variables and the `in` keyword |
-| `pp-component`, `pp-owner`, `data-pp-*`, `pp-if`, … | Flagged **invalid** — runtime-managed internals and nonexistent `pp-*` names (PulsePoint has no `pp-if`/`pp-show`/`pp-else`/`pp-key`; use `hidden={cond}`, ternaries, and plain `key`) |
+| `pp-component`, `pp-owner`, `data-pp-*`, `pp-if`, … | Flagged **invalid** — runtime-managed internals and nonexistent `pp-*` names (PulsePoint has no `pp-if`/`pp-show`/`pp-else`/`pp-key`; use `hidden="{cond}"`, ternaries, and plain `key`) |
 | `<token.provider value="{value}">` | Context-provider tags |
-| `onclick={…}`, `oninput={…}` | Event attributes |
-| `"Quoted authored text"` | Strings, with escapes and `&#123;` entity references |
-| `<!DOCTYPE html>`, `<!-- … -->` | Doctype and authored HTML comments |
-| `// line`, `/* block */` | Rust comments — anywhere inside the macro, between nodes or between attributes. Their text is never read as markup |
+| `onclick="…"`, `oninput="…"` | Event attributes |
+| Text | Plain HTML text — a quote or an apostrophe in it is just text — with `&#123;` entity references |
+| `<!DOCTYPE html>`, `<!-- … -->` | Doctype and template comments. Markup inside a comment never opens a region |
 
-Nested `html! { … }` blocks inside `@{…}` expressions re-enter HTML
-highlighting, so patterns like `Html::concat(items.iter().map(|item| html! { <li>@{item}</li> }))`
-work too.
+A template nested inside `@{…}` (written with one fewer `#`) re-enters HTML
+highlighting, so `Html::concat(items.iter().map(|item| html! {r#"<li>@{item}</li>"#}))`
+works too, and its parent template carries on after it.
 
 ## Component imports
 
@@ -128,18 +129,18 @@ insert an aliased import. Undo restores the original document in one step.
 The extension contributes no language of its own. It contributes two
 **injection grammars** targeting `source.rust`.
 `syntaxes/rahti.injection.tmLanguage.json` takes over when the tokenizer meets
-`html! {`, until the macro's closing brace, delegating to the stock
-`source.rust`, `source.js`, and `source.css` grammars for the embedded regions
-— so embedded code is colored by the same grammars as standalone files, in
-any theme. A script body written as a Rust raw string, `<script>r#"…"#</script>`,
-is JavaScript between Rust delimiters, closed exactly where rustc closes the raw
-string. `syntaxes/rahti.script-island.injection.tmLanguage.json` finds
+`html! {r##"`, until the `"##}` that closes it (the end back-references the
+opening hashes, so it closes exactly where rustc closes the raw string),
+delegating to the stock `source.rust`, `source.js`, and `source.css` grammars
+for the embedded regions — so embedded code is colored by the same grammars as
+standalone files, in any theme.
+`syntaxes/rahti.script-island.injection.tmLanguage.json` finds
 `@{rust_expression}` at any depth of embedded JavaScript (`pp.state(@{…})`,
 `const x = @{…}`), where `html!` lifts it too.
 
 rust-analyzer's semantic highlighting paints a whole string literal one color,
 and VS Code lets semantic tokens override grammars, which would flatten a
-raw-string script to string color. The extension therefore defaults
+whole template to string color. The extension therefore defaults
 `rust-analyzer.semanticHighlighting.strings.enable` to `false`, the setting
 rust-analyzer provides for exactly this; Rust strings are still colored by the
 grammar. Set it back to `true` in your settings to override.

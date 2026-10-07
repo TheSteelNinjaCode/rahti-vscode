@@ -126,78 +126,74 @@ function scopesOf(lines, text, { line } = {}) {
     return token.scopes;
 }
 
+// A page whose template wraps `body`. Line 0 is `fn page`, line 1 opens the
+// template, line 2 opens <section>, `body` starts on line 3.
 const page = body => `fn page() -> Html {
-    html! {
+    html! {r##"
         <section>
-            <p>{label}</p>
 ${body}
         </section>
-    }
+    "##}
 }
+
+pub fn after() -> u32 { 1 }
 `;
 
-test("a raw-string script body is JavaScript between Rust delimiters", { skip }, async () => {
-    const lines = await tokenize(page(`            <script>r#"
+const lastLines = lines => lines.slice(-4).flat();
+
+test("a template is HTML, closed where rustc closes the raw string", { skip }, async () => {
+    const lines = await tokenize(page(`            <p class="lede">Don't panic — say "hi" to {name} and @{user}.</p>`));
+
+    assert.match(scopesOf(lines, "html!"), /entity\.name\.function\.macro\.rust/);
+    assert.match(scopesOf(lines, "r", { line: 1 }), /punctuation\.definition\.template\.begin\.rahti/);
+    assert.match(scopesOf(lines, "p", { line: 3 }), /entity\.name\.tag\.html\.rahti/);
+    assert.match(scopesOf(lines, "class"), /entity\.other\.attribute-name\.html\.rahti/);
+    // A quote or an apostrophe in text is text, not the start of a string.
+    assert.doesNotMatch(scopesOf(lines, "{", { line: 3 }), /string/);
+    assert.match(scopesOf(lines, "name"), /meta\.embedded\.block\.javascript/);
+    assert.match(scopesOf(lines, "user"), /meta\.embedded\.block\.rust/);
+    assert.match(scopesOf(lines, "section", { line: 4 }), /entity\.name\.tag\.html\.rahti/);
+    // The template ends at `"##}`, and the Rust after it is Rust.
+    assert.match(scopesOf(lines, "##", { line: 5 }), /punctuation\.definition\.template\.end\.rahti/);
+    assert.match(scopesOf(lines, "fn", { line: 8 }), /storage\.type|keyword/);
+    assert.ok(lastLines(lines).every(t => !/rahti|\.js/.test(t.scopes)), JSON.stringify(lastLines(lines)));
+});
+
+test("a script body is plain JavaScript, whatever the Rust lexer would think of it", { skip }, async () => {
+    const lines = await tokenize(page(`            <script>
+                // a comment
                 const label = 'single quotes';
                 const shout = \`\${label}!\`;
-            "#</script>`));
-
-    assert.match(scopesOf(lines, "r"), /punctuation\.definition\.raw-script\.begin\.rahti/);
-    assert.match(scopesOf(lines, "'", { line: 5 }), /string\.quoted\.single\.js/);
-    assert.match(scopesOf(lines, "single quotes"), /string\.quoted\.single\.js/);
-    assert.match(scopesOf(lines, "`", { line: 6 }), /string\.template\.js/);
-    assert.match(scopesOf(lines, "#", { line: 7 }), /punctuation\.definition\.raw-script\.end\.rahti/);
-    // The markup after the script is markup again, and the macro still closes.
-    assert.match(scopesOf(lines, "script", { line: 7 }), /entity\.name\.tag\.script\.html\.rahti/);
-    assert.match(scopesOf(lines, "section", { line: 8 }), /entity\.name\.tag\.html\.rahti/);
-    assert.doesNotMatch(scopesOf(lines, "section", { line: 8 }), /\.js/);
-    assert.match(scopesOf(lines, "}", { line: 10 }), /punctuation\.brackets\.curly\.rust/);
-});
-
-test("the body ends where rustc ends it: at the opening's number of hashes", { skip }, async () => {
-    const lines = await tokenize(page(`            <script>r##"
                 const color = "#fff";
-            "##</script>`));
-
-    assert.match(scopesOf(lines, "#fff"), /string\.quoted\.double\.js/);
-    assert.match(scopesOf(lines, "##", { line: 6 }), /punctuation\.definition\.raw-script\.end\.rahti/);
-    assert.match(scopesOf(lines, "section", { line: 7 }), /entity\.name\.tag\.html\.rahti/);
-});
-
-test("@{…} inside a raw-string script is a Rust island", { skip }, async () => {
-    const lines = await tokenize(page(`            <script type="module">r#"
-                const workers = @{Json(&workers)};
-            "#</script>`));
-
-    assert.match(scopesOf(lines, "type"), /entity\.other\.attribute-name\.html\.rahti/);
-    assert.match(scopesOf(lines, "@{"), /punctuation\.section\.embedded\.begin\.rust\.rahti/);
-    assert.match(scopesOf(lines, "Json"), /meta\.embedded\.block\.rust/);
-    assert.match(scopesOf(lines, ";", { line: 5 }), /punctuation\.terminator\.statement\.js/);
-    assert.match(scopesOf(lines, "section", { line: 7 }), /entity\.name\.tag\.html\.rahti/);
-});
-
-test("a token-written script body is still JavaScript", { skip }, async () => {
-    const lines = await tokenize(page(`            <script>
-                const [count, setCount] = pp.state(0);
+                const digits = /\d+/;
             </script>`));
 
-    assert.match(scopesOf(lines, "const"), /storage\.type\.js/);
-    assert.match(scopesOf(lines, "section", { line: 7 }), /entity\.name\.tag\.html\.rahti/);
+    assert.match(scopesOf(lines, " a comment"), /comment\.line\.double-slash\.js/);
+    assert.match(scopesOf(lines, "single quotes"), /string\.quoted\.single\.js/);
+    assert.match(scopesOf(lines, "`", { line: 6 }), /string\.template\.js/);
+    assert.match(scopesOf(lines, "#fff"), /string\.quoted\.double\.js/);
+    assert.match(scopesOf(lines, "script", { line: 9 }), /entity\.name\.tag\.script\.html\.rahti/);
+    assert.match(scopesOf(lines, "section", { line: 10 }), /entity\.name\.tag\.html\.rahti/);
+    assert.ok(lastLines(lines).every(t => !/rahti|\.js/.test(t.scopes)), JSON.stringify(lastLines(lines)));
 });
 
-test("@@{ is a literal @{ and stays JavaScript", { skip }, async () => {
-    const lines = await tokenize(page(`            <script>r#"
+test("@{…} is a Rust island at any depth of a script", { skip }, async () => {
+    const lines = await tokenize(page(`            <script>
+                const [items, setItems] = pp.state(@{Json(&items)});
                 const literal = "@@{not rust}";
-            "#</script>`));
+            </script>`));
 
+    assert.match(scopesOf(lines, "Json"), /meta\.embedded\.block\.rust/);
+    assert.match(scopesOf(lines, ";", { line: 4 }), /punctuation\.terminator\.statement\.js/);
     assert.doesNotMatch(scopesOf(lines, "@@{not rust}"), /embedded\.block\.rust/);
 });
 
-test("@{…} in a token-written script, inside a call, is a Rust island", { skip }, async () => {
-    const lines = await tokenize(page(`            <script>
-                const [workers, setWorkers] = pp.state(@{Json(&workers)});
-            </script>`));
+test("a template nested in @{…} is HTML too, and its parent goes on", { skip }, async () => {
+    const lines = await tokenize(page(`            <ul>@{Html::concat(items.iter().map(|i| html! {r#"<li>@{i}</li>"#}))}</ul>
+            <p>after</p>`));
 
-    assert.match(scopesOf(lines, "Json"), /meta\.embedded\.block\.rust/);
-    assert.match(scopesOf(lines, "section", { line: 7 }), /entity\.name\.tag\.html\.rahti/);
+    assert.match(scopesOf(lines, "li"), /entity\.name\.tag\.html\.rahti/);
+    assert.match(scopesOf(lines, "ul", { line: 3 }), /entity\.name\.tag\.html\.rahti/);
+    assert.match(scopesOf(lines, "after"), /meta\.embedded\.block\.html\.rahti/);
+    assert.match(scopesOf(lines, "section", { line: 5 }), /entity\.name\.tag\.html\.rahti/);
 });

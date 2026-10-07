@@ -5,17 +5,15 @@ use crate::rahti::{Html, component, html, rpc};
 
 /// Root layout: doctype, literal <html> root, script/link tags, slot.
 pub fn layout(children: Html) -> Html {
-    html! {
+    html! {r##"
         <!DOCTYPE html>
         <html lang="en">
             <head>
                 <meta charset="UTF-8" />
-                <title>"my-app"</title>
-                // A Rust line comment inside the macro. The lexer strips it
-                // before the macro runs, so anything may appear here —
-                // including markup that must NOT open a region: `<script>`,
-                // `<style>`, `<head>`, a lone `"` quote, or a `{brace}`.
-                /* A block comment, with a nested /* block comment */ inside. */
+                <title>my-app</title>
+                <!-- A template comment is a note, not sent to the browser. Markup
+                     in it must NOT open a region: <script>, <style>, <head>,
+                     a lone " quote, or a {brace}. -->
                 <link href="/css/styles.css" rel="stylesheet" />
                 <script type="module" src="/js/main.js"></script>
                 <style>
@@ -28,38 +26,38 @@ pub fn layout(children: Html) -> Html {
                 </div>
             </body>
         </html>
-    }
+    "##}
 }
 
 /// Page: @{rust} vs {js} dialects, events, pp-* attributes, script body.
 pub async fn page() -> Html {
     let server_title = "Dashboard";
     let initial_count = 3;
-    html! {
+    html! {r##"
         <section class="mx-auto max-w-2xl px-6 py-16">
             <!-- authored comment -->
             <h1>@{server_title}</h1>
-            <a href=@{format!("/users/{}", 42)}>"Profile"</a>
+            <a href=@{format!("/users/{}", 42)}>Profile</a>
 
-            <button onclick={setCount(count + 1)}>{count}</button>
-            <input value={name} oninput={setName(target.value)} />
+            <button onclick="setCount(count + 1)">{count}</button>
+            <input value="{name}" oninput="setName(target.value)" />
             <input
                 type="file"
-                pp-ref={file} // a comment between attributes
+                pp-ref="{file}" 
             />
-            <a href="/about" pp-spa="false">"About"</a>
+            <a href="/about" pp-spa="false">About</a>
 
             <ul>
                 <template pp-for="(item, index) in items">
-                    <li key="{item.id}" hidden={item.done}>{index}: {item.label}</li>
+                    <li key="{item.id}" hidden="{item.done}">{index}: {item.label}</li>
                 </template>
             </ul>
 
-            <span pp-style="{cssText}">"Admin: "{admin ? "yes" : "no"}</span>
-            <p>"Literal braces: &#123;user&#125;"</p>
+            <span pp-style="{cssText}">Admin: {admin ? "yes" : "no"}</span>
+            <p>Literal braces: &#123;user&#125;</p>
 
-            <Card title="Profile" count=3 wide>
-                <p>"Ada"</p>
+            <Card title="Profile" count="3" wide>
+                <p>Ada</p>
                 <Badge text="Rust" />
             </Card>
 
@@ -73,20 +71,20 @@ pub async fn page() -> Html {
                 }
             </script>
         </section>
-    }
+    "##}
 }
 
 /// Fragment root, nested html! inside @{…}.
 #[component]
 pub fn Pair(label: &str, items: Vec<String>) -> Html {
-    html! {
+    html! {r##"
         <>
             <dt>@{label}</dt>
-            <dd>@{Html::concat(items.iter().map(|item| html! {
+            <dd>@{Html::concat(items.iter().map(|item| html! {r#"
                 <li>@{item}</li>
-            }))}</dd>
+            "#}))}</dd>
         </>
-    }
+    "##}
 }
 
 /// Plain Rust after the macro stays plain Rust.
@@ -95,21 +93,21 @@ pub async fn hello(who: String) -> String {
     format!("Hello, {who}.")
 }
 
-/// Script as one Rust raw string: JavaScript the Rust lexer rejects (single
-/// quotes, template literals, comments) highlights as JavaScript, and the body
-/// closes at the same `"#` rustc closes it at. `@{…}` is Rust at any depth.
+/// A script is plain JavaScript: what the Rust lexer would reject (single
+/// quotes, template literals, comments, "#fff") highlights as JavaScript, and
+/// `@{…}` is Rust at any depth.
 #[component]
 pub fn Greeter(name: String) -> Html {
-    html! {
+    html! {r##"
         <section class="greeter">
             <p>{greeting}</p>
-            <script>r#"
-                // Comments survive in a raw-string body.
+            <script>
+                // Comments survive.
                 const name = @{Json(&name)};
                 const [greeting, setGreeting] = pp.state(`Hello, ${name}!`);
                 const color = '#4f46e5';
                 const literal = "@@{not rust}";
-            "#</script>
+            </script>
         </section>
-    }
+    "##}
 }
