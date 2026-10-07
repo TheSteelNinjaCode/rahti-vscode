@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.7 — 2026-10-07
 
 - JSX-style Ctrl+. component import quick fixes inside `html!` markup.
 - Component tag completion with automatic Rust `use` edits.
@@ -11,16 +11,18 @@
 - Scope-aware handling of existing explicit, grouped, aliased, and direct
   component-module glob imports, with preservation of module docs and attributes.
 - Dependency-free unit and VS Code provider contract tests.
-- Highlights templates written as one raw string of HTML, `html! {r##"…"##}` —
-  the only form Rahti's `html!` accepts. The template closes at the `"##}` that
-  matches its opening hashes, exactly where rustc closes the raw string; text is
-  plain HTML text, script bodies plain JavaScript, and a template nested in
-  `@{…}` re-enters HTML. The token-form rules (quoted text, Rust comments
-  between nodes) are gone with the form.
+- Highlights templates as Rahti writes them: markup as Rust tokens,
+  `html! { … }`, closed at the macro's own brace. Quoted text is text, `{…}`
+  bindings and `onclick={…}` handlers are JavaScript, `@{…}` is Rust, and Rust
+  comments are comments. A template nested in `@{…}` re-enters markup.
+- `<script>r##"…"##</script>` bodies are JavaScript and `<style>r##"…"##</style>`
+  bodies CSS, each closing exactly where rustc closes the raw string.
+- Flags what `html!` refuses: a quoted handler, a script or style body with
+  fewer than two `#`s, and a body written as tokens.
 - `@{…}` Rust islands are found at any depth of a script body, such as
-  `pp.state(@{Json(&items)})` or `const x = @{…}`, not only at statement level.
+  `pp.state(@{Json(&items)})` or `const x = @{…}`.
 - Defaults `rust-analyzer.semanticHighlighting.strings.enable` to `false`, so
-  rust-analyzer's string coloring does not paint over a template.
+  rust-analyzer's string coloring does not paint over script and style bodies.
 - Grammar tests that tokenize with the grammars and tokenizer of the installed
   VS Code, still with no npm dependencies.
 

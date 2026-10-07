@@ -2,7 +2,7 @@
     "name": "rahti",
     "displayName": "Rahti",
     "description": "Rahti html! syntax highlighting and JSX-style component auto-imports in Rust files.",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "publisher": "JeffersonAbrahamOmier",
     "license": "MIT",
     "main": "./src/extension.js",

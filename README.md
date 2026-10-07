@@ -3,35 +3,45 @@
 Syntax highlighting and JSX-style component imports for Rahti `html!` templates
 inside Rust files.
 
-A Rahti template is one raw string of HTML, `html! {r##"…"##}`. Without this
-extension it renders as one Rust string — tags, attributes, PulsePoint
-bindings and script bodies all one color. This extension injects a TextMate
-grammar into Rust files so the template's HTML and its dialects each get their
-own color.
+A Rahti template is markup written as Rust tokens, `html! { … }`, and only a
+`<script>` or `<style>` body is a string, always `r##"…"##`. Without this
+extension the template renders as Rust — tags as operators, script bodies as
+one string. This extension injects a TextMate grammar into Rust files so the
+markup, its two dialects, and the script and style bodies each get their own
+color, and flags the forms `html!` refuses.
 
 ## What gets highlighted
 
 | Syntax | Highlighted as |
 | --- | --- |
+| `html! { … }` | The template: markup until the macro's own `}` |
 | `<section class="…">` | HTML tags and attributes |
 | `<Card title="…">` / `<slot />` | Component tags (PascalCase, distinct color) |
 | `<>…</>` | Fragment roots |
+| `"Hello"` | Text — a quoted string, apostrophes included, with `&#123;` entity references |
 | `@{rust_expression}` | Embedded Rust (server render) |
-| `html! {r##"…"##}` | The template: its delimiters, and HTML until the `"##}` that closes it — exactly where rustc closes the raw string |
-| `{javascript_expression}` | Embedded JavaScript (PulsePoint, browser render) — in text and as a quoted attribute value like `key="{item.id}"` |
-| `<script>…</script>` | Plain JavaScript body, with `@{…}` Rust islands anywhere inside it; `@@{` stays a literal `@{` |
-| `<style>…</style>` | CSS body |
+| `{javascript_expression}` | Embedded JavaScript (PulsePoint, browser render) — in text and as an attribute value like `key={item.id}` |
+| `onclick={save()}`, `oninput={…}` | Event attributes, with their handler as JavaScript |
+| `<script>r##"…"##</script>` | Plain JavaScript body, with `@{…}` Rust islands anywhere inside it; `@@{` stays a literal `@{`. It closes exactly where rustc closes the raw string |
+| `<style>r##"…"##</style>` | CSS body |
 | `pp-for`, `pp-ref`, `pp-style`, `pp-spread`, `pp-spa`, … | The authored PulsePoint attribute surface (distinct scope) |
 | `pp-for="(item, index) in items"` | Loop DSL: variables and the `in` keyword |
-| `pp-component`, `pp-owner`, `data-pp-*`, `pp-if`, … | Flagged **invalid** — runtime-managed internals and nonexistent `pp-*` names (PulsePoint has no `pp-if`/`pp-show`/`pp-else`/`pp-key`; use `hidden="{cond}"`, ternaries, and plain `key`) |
-| `<token.provider value="{value}">` | Context-provider tags |
-| `onclick="…"`, `oninput="…"` | Event attributes |
-| Text | Plain HTML text — a quote or an apostrophe in it is just text — with `&#123;` entity references |
-| `<!DOCTYPE html>`, `<!-- … -->` | Doctype and template comments. Markup inside a comment never opens a region |
+| `<token.provider value={value}>` | Context-provider tags |
+| `<!DOCTYPE html>`, `// …`, `/* … */` | Doctype and Rust comments, which are not sent to the browser |
 
-A template nested inside `@{…}` (written with one fewer `#`) re-enters HTML
-highlighting, so `Html::concat(items.iter().map(|item| html! {r#"<li>@{item}</li>"#}))`
-works too, and its parent template carries on after it.
+Flagged **invalid**, as `html!` refuses them at compile time:
+
+| Written | Write instead |
+| --- | --- |
+| `onclick="save()"` | `onclick={save()}` — a handler is a binding |
+| `<script>r#"…"#</script>`, `<script>r"…"</script>` | `<script>r##"…"##</script>` — a `"#` such as `"#fff"` would end the body |
+| `<script>const a = 1;</script>` | `<script>r##"const a = 1;"##</script>` — a body is a raw string |
+| `pp-component`, `pp-owner`, `data-pp-*`, `pp-if`, … | Runtime-managed internals and nonexistent `pp-*` names: PulsePoint has no `pp-if`/`pp-show`/`pp-else`/`pp-key`; use `hidden={cond}`, ternaries, and plain `key` |
+
+A quoted attribute value is text, so `title="{x}"` is not highlighted as a
+binding. A template nested inside `@{…}` re-enters markup highlighting, so
+`Html::concat(items.iter().map(|item| html! { <li>@{item}</li> }))` works too,
+and its parent template carries on after it.
 
 ## Component imports
 
@@ -82,7 +92,7 @@ for semantic diagnostics. Open a Cargo project in a workspace to enable imports.
 ### From a packaged .vsix
 
 ```bash
-code --install-extension rahti-0.0.3.vsix
+code --install-extension rahti-0.0.7.vsix
 ```
 
 (Or in VS Code: Extensions panel → `…` menu → *Install from VSIX…*)
@@ -129,21 +139,22 @@ insert an aliased import. Undo restores the original document in one step.
 The extension contributes no language of its own. It contributes two
 **injection grammars** targeting `source.rust`.
 `syntaxes/rahti.injection.tmLanguage.json` takes over when the tokenizer meets
-`html! {r##"`, until the `"##}` that closes it (the end back-references the
-opening hashes, so it closes exactly where rustc closes the raw string),
-delegating to the stock `source.rust`, `source.js`, and `source.css` grammars
-for the embedded regions — so embedded code is colored by the same grammars as
-standalone files, in any theme.
+`html! {`, until the macro's own `}` — every `{…}` binding and `@{…}` value
+inside consumes its own braces — delegating to the stock `source.rust`,
+`source.js`, and `source.css` grammars for the embedded regions, so embedded
+code is colored by the same grammars as standalone files, in any theme. A
+`<script>r##"…"##</script>` body closes at the quote and the same `#`s it
+opened with, exactly where rustc closes the raw string.
 `syntaxes/rahti.script-island.injection.tmLanguage.json` finds
 `@{rust_expression}` at any depth of embedded JavaScript (`pp.state(@{…})`,
 `const x = @{…}`), where `html!` lifts it too.
 
 rust-analyzer's semantic highlighting paints a whole string literal one color,
-and VS Code lets semantic tokens override grammars, which would flatten a
-whole template to string color. The extension therefore defaults
-`rust-analyzer.semanticHighlighting.strings.enable` to `false`, the setting
-rust-analyzer provides for exactly this; Rust strings are still colored by the
-grammar. Set it back to `true` in your settings to override.
+and VS Code lets semantic tokens override grammars, which would flatten every
+`<script>` and `<style>` body to string color. The extension therefore
+defaults `rust-analyzer.semanticHighlighting.strings.enable` to `false`, the
+setting rust-analyzer provides for exactly this; Rust strings are still
+colored by the grammar. Set it back to `true` in your settings to override.
 
 `src/extension.js` registers Rust quick-fix and completion providers using the
 [VS Code extension API](https://code.visualstudio.com/api/references/vscode-api).

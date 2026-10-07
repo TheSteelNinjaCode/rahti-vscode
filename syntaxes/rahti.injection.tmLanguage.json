@@ -10,35 +10,20 @@
     ],
     "repository": {
         "html-macro": {
-            "comment": "html! {r##\"…\"##}: a template is one raw string of HTML. It closes at the quote and hashes it opened with, then the macro's brace, exactly where rustc closes the raw string.",
-            "begin": "\\b(html!)\\s*(\\{)\\s*(r)(#*)(\")",
+            "comment": "html! { … }: a template is markup written as Rust tokens. It closes at the macro's own brace; every `{…}` and `@{…}` inside consumes its own braces, so the first unclaimed `}` is the macro's.",
+            "begin": "\\b(html!)\\s*(\\{)",
             "beginCaptures": {
                 "1": {
                     "name": "entity.name.function.macro.rust"
                 },
                 "2": {
-                    "name": "punctuation.brackets.curly.rust"
-                },
-                "3": {
-                    "name": "storage.type.string.raw.rust punctuation.definition.template.begin.rahti"
-                },
-                "4": {
-                    "name": "punctuation.definition.template.begin.rahti"
-                },
-                "5": {
-                    "name": "punctuation.definition.template.begin.rahti"
+                    "name": "punctuation.brackets.curly.rust punctuation.definition.template.begin.rahti"
                 }
             },
-            "end": "(\")(\\4)\\s*(\\})",
+            "end": "(\\})",
             "endCaptures": {
                 "1": {
-                    "name": "punctuation.definition.template.end.rahti"
-                },
-                "2": {
-                    "name": "punctuation.definition.template.end.rahti"
-                },
-                "3": {
-                    "name": "punctuation.brackets.curly.rust"
+                    "name": "punctuation.brackets.curly.rust punctuation.definition.template.end.rahti"
                 }
             },
             "contentName": "meta.embedded.block.html.rahti",
@@ -51,7 +36,7 @@
         "html-content": {
             "patterns": [
                 {
-                    "include": "#comment"
+                    "include": "#rust-comment"
                 },
                 {
                     "include": "#doctype"
@@ -84,14 +69,56 @@
                     "include": "#pp-interpolation"
                 },
                 {
+                    "include": "#text-string"
+                },
+                {
                     "include": "#entity"
                 }
             ]
         },
-        "comment": {
-            "begin": "<!--",
-            "end": "-->",
-            "name": "comment.block.html.rahti"
+        "rust-comment": {
+            "comment": "Comments in a template are Rust comments and are not sent to the browser.",
+            "patterns": [
+                {
+                    "begin": "/\\*",
+                    "end": "\\*/",
+                    "name": "comment.block.rust"
+                },
+                {
+                    "match": "(//).*$",
+                    "name": "comment.line.double-slash.rust",
+                    "captures": {
+                        "1": {
+                            "name": "punctuation.definition.comment.rust"
+                        }
+                    }
+                }
+            ]
+        },
+        "text-string": {
+            "comment": "Text is a quoted string, written to the page as it is: apostrophes, `#` and punctuation included.",
+            "begin": "\"",
+            "beginCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.begin.rahti"
+                }
+            },
+            "end": "\"",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.end.rahti"
+                }
+            },
+            "name": "string.quoted.double.text.rahti",
+            "patterns": [
+                {
+                    "match": "\\\\.",
+                    "name": "constant.character.escape.rust"
+                },
+                {
+                    "include": "#entity"
+                }
+            ]
         },
         "doctype": {
             "match": "(<!)(DOCTYPE|doctype)\\b([^>]*)(>)",
@@ -154,6 +181,86 @@
                 {
                     "begin": "(?<=>)",
                     "end": "(?=</script)",
+                    "patterns": [
+                        {
+                            "include": "#script-body"
+                        },
+                        {
+                            "include": "#script-body-short"
+                        },
+                        {
+                            "include": "#body-as-tokens"
+                        }
+                    ]
+                }
+            ]
+        },
+        "script-body": {
+            "comment": "The one spelling: r##\"…\"## (or more #s). It closes at the quote and the same #s, exactly where rustc closes the raw string.",
+            "begin": "(r)(#{2,})(\")",
+            "beginCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.begin.rahti"
+                },
+                "1": {
+                    "name": "storage.type.string.raw.rust"
+                }
+            },
+            "end": "(\")(\\2)",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.end.rahti"
+                }
+            },
+            "contentName": "meta.embedded.block.javascript",
+            "patterns": [
+                {
+                    "include": "#rust-interpolation"
+                },
+                {
+                    "include": "source.js"
+                }
+            ]
+        },
+        "script-body-short": {
+            "comment": "r\"…\" and r#\"…\"# are refused by html!: a \"# such as \"#fff\" would end the body. Flagged, and still read as JavaScript up to where rustc closes it.",
+            "patterns": [
+                {
+                    "begin": "r#\"",
+                    "beginCaptures": {
+                        "0": {
+                            "name": "invalid.illegal.delimiter.rahti"
+                        }
+                    },
+                    "end": "\"#",
+                    "endCaptures": {
+                        "0": {
+                            "name": "invalid.illegal.delimiter.rahti"
+                        }
+                    },
+                    "contentName": "meta.embedded.block.javascript",
+                    "patterns": [
+                        {
+                            "include": "#rust-interpolation"
+                        },
+                        {
+                            "include": "source.js"
+                        }
+                    ]
+                },
+                {
+                    "begin": "r\"",
+                    "beginCaptures": {
+                        "0": {
+                            "name": "invalid.illegal.delimiter.rahti"
+                        }
+                    },
+                    "end": "\"",
+                    "endCaptures": {
+                        "0": {
+                            "name": "invalid.illegal.delimiter.rahti"
+                        }
+                    },
                     "contentName": "meta.embedded.block.javascript",
                     "patterns": [
                         {
@@ -209,14 +316,41 @@
                 {
                     "begin": "(?<=>)",
                     "end": "(?=</style)",
-                    "contentName": "meta.embedded.block.css",
                     "patterns": [
                         {
-                            "include": "source.css"
+                            "begin": "(r)(#{2,})(\")",
+                            "beginCaptures": {
+                                "0": {
+                                    "name": "punctuation.definition.string.begin.rahti"
+                                },
+                                "1": {
+                                    "name": "storage.type.string.raw.rust"
+                                }
+                            },
+                            "end": "(\")(\\2)",
+                            "endCaptures": {
+                                "0": {
+                                    "name": "punctuation.definition.string.end.rahti"
+                                }
+                            },
+                            "contentName": "meta.embedded.block.css",
+                            "patterns": [
+                                {
+                                    "include": "source.css"
+                                }
+                            ]
+                        },
+                        {
+                            "include": "#body-as-tokens"
                         }
                     ]
                 }
             ]
+        },
+        "body-as-tokens": {
+            "comment": "A script or style body must be a raw string; anything else before the closing tag is refused by html!.",
+            "match": "[^\\s<][^<]*",
+            "name": "invalid.illegal.body-as-tokens.rahti"
         },
         "fragment-tag": {
             "match": "(</?)(>)",
@@ -309,6 +443,9 @@
         "attributes": {
             "patterns": [
                 {
+                    "include": "#rust-comment"
+                },
+                {
                     "include": "#rust-interpolation"
                 },
                 {
@@ -324,6 +461,11 @@
                 {
                     "match": "\\b(?:data-pp|pp)-[a-zA-Z][a-zA-Z0-9-]*\\b",
                     "name": "invalid.illegal.attribute-name.pulsepoint.rahti"
+                },
+                {
+                    "comment": "A handler is client code, written as a binding: onclick={save()}. A quoted handler is refused by html!.",
+                    "match": "\\b(on[a-z]+)(?=\\s*=\\s*[\"'])",
+                    "name": "invalid.illegal.handler-as-text.rahti"
                 },
                 {
                     "include": "#attribute-string"
@@ -382,40 +524,17 @@
             ]
         },
         "attribute-string": {
+            "comment": "A literal value is a quoted Rust string: text, never a binding.",
+            "begin": "\"",
+            "end": "\"",
+            "name": "string.quoted.double.html.rahti",
             "patterns": [
                 {
-                    "begin": "\"",
-                    "end": "\"",
-                    "name": "string.quoted.double.html.rahti",
-                    "patterns": [
-                        {
-                            "match": "\\\\.",
-                            "name": "constant.character.escape.rahti"
-                        },
-                        {
-                            "include": "#pp-interpolation"
-                        },
-                        {
-                            "include": "#entity"
-                        }
-                    ]
+                    "match": "\\\\.",
+                    "name": "constant.character.escape.rust"
                 },
                 {
-                    "begin": "'",
-                    "end": "'",
-                    "name": "string.quoted.single.html.rahti",
-                    "patterns": [
-                        {
-                            "match": "\\\\.",
-                            "name": "constant.character.escape.rahti"
-                        },
-                        {
-                            "include": "#pp-interpolation"
-                        },
-                        {
-                            "include": "#entity"
-                        }
-                    ]
+                    "include": "#entity"
                 }
             ]
         },
